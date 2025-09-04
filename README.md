@@ -17,6 +17,7 @@ brew install fswatch
 ```
 
 If you don't have Homebrew installed, install it first:
+
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
@@ -35,49 +36,75 @@ Copy and paste this script (update the configuration section):
 ```bash
 #!/bin/bash
 
-# Configuration - UPDATE THESE PATHS
-REPO_DIR="/Users/yourusername/path/to/your/repo"  # Change this to your actual repo path
-FILES_TO_WATCH=("settings.json" "app.txt")  # Add/remove files as needed
-BRANCH="main"  # Change if you use a different branch (e.g., "master")
+# Configuration
+REPO_DIR="repo dir"  # Your GitHub repo path
+BRANCH="main"
 
-# Change to repo directory
-cd "$REPO_DIR" || {
-    echo "Error: Cannot access repository directory: $REPO_DIR"
-    exit 1
+# Files to monitor and their destinations in the repo
+declare -a CONFIG_FILES=(
+    "$HOME/../"
+    "../"
+    # Add more files as needed: "source_path:destination_name"
+)
+
+# Extract source paths for fswatch
+SOURCE_PATHS=()
+for config in "${CONFIG_FILES[@]}"; do
+    IFS=':' read -r source dest <<< "$config"
+    if [[ -f "$source" ]]; then
+        SOURCE_PATHS+=("$source")
+    fi
+done
+
+# Function to copy files to repo and push changes
+sync_and_push() {
+    cd "$REPO_DIR" || exit 1
+
+    echo "$(date): Changes detected, syncing files..."
+
+    # Copy all monitored files to repo
+    for config in "${CONFIG_FILES[@]}"; do
+        IFS=':' read -r source dest <<< "$config"
+        if [[ -f "$source" ]]; then
+            cp "$source" "$REPO_DIR/$dest"
+            echo "📋 Copied: $source → $dest"
+        fi
+    done
+
+    # Check if there are changes to commit
+    if [[ -n $(git status --porcelain) ]]; then
+        echo "📝 Committing and pushing changes..."
+        git add .
+        git commit -m "Auto-update configs - $(date '+%Y-%m-%d %H:%M:%S')"
+        git push origin "$BRANCH"
+        echo "✅ Changes pushed successfully!"
+    else
+        echo "ℹ️ No changes to commit"
+    fi
 }
 
+# Initial sync
 echo "🚀 Starting config file monitor..."
 echo "📁 Repository: $REPO_DIR"
-echo "👀 Watching files: ${FILES_TO_WATCH[*]}"
-echo "🌿 Branch: $BRANCH"
-echo "⏹️  Press Ctrl+C to stop"
+echo "👀 Monitoring files:"
+for config in "${CONFIG_FILES[@]}"; do
+    IFS=':' read -r source dest <<< "$config"
+    echo "  • $source → $dest"
+done
 echo "---"
 
-# Monitor files and push changes
-fswatch -o "${FILES_TO_WATCH[@]}" | while read -r num; do
-    echo "$(date '+%Y-%m-%d %H:%M:%S'): 🔍 Changes detected in config files"
-    
-    # Check if there are actually changes to commit
-    if [[ -n $(git status --porcelain) ]]; then
-        echo "📝 Staging and committing changes..."
-        
-        # Add the specific files
-        git add "${FILES_TO_WATCH[@]}"
-        
-        # Commit with timestamp
-        git commit -m "Auto-update config files - $(date '+%Y-%m-%d %H:%M:%S')"
-        
-        # Push to GitHub
-        if git push origin "$BRANCH"; then
-            echo "✅ Changes pushed to GitHub successfully!"
-        else
-            echo "❌ Failed to push changes to GitHub"
-        fi
-    else
-        echo "ℹ️  No changes to commit"
-    fi
-    
-    echo "---"
+# Do initial sync
+sync_and_push
+echo "---"
+
+# Monitor files and sync when they change
+if [[ ${#SOURCE_PATHS[@]} -eq 0 ]]; then
+    echo "❌ No valid files found to monitor"
+    exit 1
+fi
+
+fswatch -o "${SOURCE_PATHS[@]}" | while read -r num; do
+    sync_and_push
 done
 ```
 
@@ -92,22 +119,26 @@ chmod +x config-monitor.sh
 ### Option A: SSH Key (Recommended)
 
 1. **Generate SSH key:**
+
    ```bash
    ssh-keygen -t ed25519 -C "your.email@example.com"
    ```
 
 2. **Add SSH key to ssh-agent:**
+
    ```bash
    eval "$(ssh-agent -s)"
    ssh-add ~/.ssh/id_ed25519
    ```
 
 3. **Copy public key to clipboard:**
+
    ```bash
    pbcopy < ~/.ssh/id_ed25519.pub
    ```
 
 4. **Add to GitHub:**
+
    - Go to GitHub.com → Settings → SSH and GPG keys
    - Click "New SSH key"
    - Paste the key and save
@@ -116,24 +147,6 @@ chmod +x config-monitor.sh
    ```bash
    ssh -T git@github.com
    ```
-
-### Option B: Personal Access Token
-
-1. **Generate token on GitHub:**
-   - Go to GitHub.com → Settings → Developer settings → Personal access tokens
-   - Generate new token with `repo` permissions
-
-2. **Configure Git to use token:**
-   ```bash
-   git config --global credential.helper osxkeychain
-   ```
-
-## Step 5: Configure Git user (if not already done)
-
-```bash
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-```
 
 ## Step 6: Update script configuration
 
@@ -144,6 +157,7 @@ nano config-monitor.sh
 ```
 
 Update these lines:
+
 - `REPO_DIR="/Users/yourusername/path/to/your/repo"` - Replace with your actual repository path
 - `FILES_TO_WATCH=("settings.json" "app.txt")` - Add/remove files you want to monitor
 - `BRANCH="main"` - Change if you use a different default branch
@@ -151,11 +165,13 @@ Update these lines:
 ## Step 7: Test the script
 
 1. **Run the script:**
+
    ```bash
    ./config-monitor.sh
    ```
 
 2. **Test monitoring:** In another Terminal window, make a change to one of your config files:
+
    ```bash
    echo "# Test change" >> settings.json
    ```
@@ -182,46 +198,15 @@ ps aux | grep fswatch
 kill XXXX
 ```
 
-### Option B: Using launchd (macOS service)
-
-1. **Create plist file:**
-   ```bash
-   nano ~/Library/LaunchAgents/com.user.config-monitor.plist
-   ```
-
-2. **Add this content (update paths):**
-   ```xml
-   <?xml version="1.0" encoding="UTF-8"?>
-   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-   <plist version="1.0">
-   <dict>
-       <key>Label</key>
-       <string>com.user.config-monitor</string>
-       <key>ProgramArguments</key>
-       <array>
-           <string>/Users/yourusername/path/to/your/repo/config-monitor.sh</string>
-       </array>
-       <key>WorkingDirectory</key>
-       <string>/Users/yourusername/path/to/your/repo</string>
-       <key>RunAtLoad</key>
-       <true/>
-       <key>KeepAlive</key>
-       <true/>
-       <key>StandardOutPath</key>
-       <string>/Users/yourusername/config-monitor.log</string>
-       <key>StandardErrorPath</key>
-       <string>/Users/yourusername/config-monitor-error.log</string>
-   </dict>
-   </plist>
-   ```
-
 3. **Load and start the service:**
+
    ```bash
    launchctl load ~/Library/LaunchAgents/com.user.config-monitor.plist
    launchctl start com.user.config-monitor
    ```
 
 4. **Check service status:**
+
    ```bash
    launchctl list | grep config-monitor
    ```
@@ -237,6 +222,7 @@ kill XXXX
 ### Common Issues
 
 **fswatch command not found:**
+
 ```bash
 # Check if fswatch is installed
 which fswatch
@@ -245,12 +231,14 @@ brew reinstall fswatch
 ```
 
 **Permission denied:**
+
 ```bash
 # Make sure script is executable
 chmod +x config-monitor.sh
 ```
 
 **Git push authentication fails:**
+
 ```bash
 # Test manual push
 git push origin main
@@ -258,6 +246,7 @@ git push origin main
 ```
 
 **Files not being detected:**
+
 - Verify file paths are correct and files exist
 - Check if files are in the repository
 - Ensure you're in the correct directory
@@ -265,11 +254,13 @@ git push origin main
 ### Checking logs
 
 **For background process:**
+
 ```bash
 tail -f config-monitor.log
 ```
 
 **For launchd service:**
+
 ```bash
 tail -f ~/config-monitor.log
 tail -f ~/config-monitor-error.log
