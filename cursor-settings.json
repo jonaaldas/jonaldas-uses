@@ -1,6 +1,6 @@
 {
     "editor.fontFamily": "Dank Mono",
-    "workbench.sideBar.location": "right",
+    "workbench.sideBar.location": "left",
     "[vue]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
