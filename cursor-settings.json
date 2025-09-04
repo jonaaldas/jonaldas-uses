@@ -1,0 +1,29 @@
+{
+    "editor.fontFamily": "Dank Mono",
+    "workbench.sideBar.location": "right",
+    "[vue]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "files.autoSave": "afterDelay",
+    "git.enableSmartCommit": true,
+    "git.autofetch": true,
+    "explorer.confirmDelete": false,
+    "git.confirmSync": false,
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.accessibilitySupport": "off",
+    "githubPullRequests.pullBranch": "never",
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.inlayHints.enabled": "off",
+    "workbench.layoutControl.enabled": false,
+    "workbench.navigationControl.enabled": false,
+    "editor.snippetSuggestions": "top",
+    "editor.suggest.localityBonus": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "workbench.colorTheme": "Cobalt2",
+    "editor.formatOnSave": true
+}
