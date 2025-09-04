@@ -1,5 +1,4 @@
 cursor
-123
 fswatch
 ngrok
 fd
