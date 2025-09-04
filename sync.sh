@@ -2,7 +2,7 @@
 
 # Configuration
 REPO_DIR="$HOME/Documents/CODE/sync-script"  # Your GitHub repo path
-BRANCH="master"
+BRANCH="main"
 
 # Files to monitor in their original locations
 declare -a FILES_TO_WATCH=(
