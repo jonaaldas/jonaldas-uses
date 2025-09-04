@@ -1,0 +1,12 @@
+🚀 Starting config file monitor...
+📁 Repository: /Users/aldas/Documents/CODE/sync-script
+👀 Monitoring files:
+  • /Users/aldas/.zshrc → .zshrc
+  • /Users/aldas/app.txt → app.txt
+  • /Users/aldas/Library/Application Support/Cursor/User/settings.json → cursor-settings.json
+---
+Thu Sep  4 18:09:06 CEST 2025: Changes detected, syncing files...
+📋 Copied: /Users/aldas/.zshrc → .zshrc
+📋 Copied: /Users/aldas/app.txt → app.txt
+📋 Copied: /Users/aldas/Library/Application Support/Cursor/User/settings.json → cursor-settings.json
+📝 Committing and pushing changes...
